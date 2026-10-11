@@ -74,6 +74,7 @@ class ReservationStation(
   private val meta = InstructionDependencies(rob.indexBits)
 
   private val robEntryIndex = Reg(UInt(rob.indexBits)).init(0)
+  private val storeInstruction = Reg(Bool()).init(False)
 
   private object State extends SpinalEnum {
     val IDLE, WAITING_FOR_ARGS, EXECUTING, BROADCASTING_RESULT = newElement()
@@ -185,6 +186,17 @@ class ReservationStation(
           rs2CdbUpdate := True
           meta.rs2.waitingForReal := False
         }
+        when(
+          currentRs2Waiting
+            && meta.mimicryMode
+            && storeInstruction
+            && cdbMessage.storeForwardValid
+        ) {
+          // A Ghost value may feed only the data operand of a store.
+          regs.setReg(pipeline.data.RS2_DATA, cdbMessage.storeForwardValue)
+          rs2CdbUpdate := True
+          meta.rs2.waitingForReal := False
+        }
         when(cdbMessage.previousWaw.valid) {
           // if we still have to wait for the true value
           meta.rs2.priorInstruction.push(cdbMessage.previousWaw.payload)
@@ -254,7 +266,10 @@ class ReservationStation(
       pipeline.serviceOption[MimicryService].foreach { mimicry =>
         {
           realUpdate :=
-            !(meta.mimicryMode ^ mimicry.isGhost(exeStage)) | mimicry.isPersistent(exeStage)
+            (!meta.mimicryMode && !mimicry.isGhost(exeStage)) || mimicry.isPersistent(exeStage)
+
+          cdbStream.payload.storeForwardValid := False
+          cdbStream.payload.storeForwardValue := 0
 
           when(!realUpdate) {
             cdbStream.payload.writeValue := meta.wawBuffer
@@ -262,6 +277,11 @@ class ReservationStation(
           } otherwise {
             cdbStream.payload.writeValue := exeStage.output(pipeline.data.RD_DATA)
             cdbStream.payload.realUpdate := exeStage.output(pipeline.data.RD_DATA_VALID)
+          }
+
+          when(meta.mimicryMode && mimicry.isGhost(exeStage) && !realUpdate) {
+            cdbStream.payload.storeForwardValid := True
+            cdbStream.payload.storeForwardValue := exeStage.output(pipeline.data.RD_DATA)
           }
         }
       }
@@ -273,6 +293,7 @@ class ReservationStation(
       dispatchStream.payload.previousWaw := meta.previousWaw.priorInstruction
       dispatchStream.payload.wawBuffer.valid := meta.wawBufferValid
       dispatchStream.payload.wawBuffer.payload := meta.wawBuffer
+      dispatchStream.payload.mimicryMode := meta.mimicryMode
 
       cdbStream.payload.robIndex := robEntryIndex
       dispatchStream.payload.robIndex := robEntryIndex
@@ -335,6 +356,7 @@ class ReservationStation(
         dispatchStream.payload.previousWaw := meta.previousWaw.priorInstruction
         dispatchStream.payload.wawBuffer.valid := meta.wawBufferValid
         dispatchStream.payload.wawBuffer.payload := meta.wawBuffer
+        dispatchStream.payload.mimicryMode := meta.mimicryMode
       }
 
       cdbStream.valid := cdbWaiting
@@ -355,11 +377,13 @@ class ReservationStation(
   }
 
   def execute(): Unit = {
+    val issueStage = pipeline.issuePipeline.stages.last
     val (robIndex, entryMeta, mimicDependency, mmMode) = rob.pushEntry()
 
     meta.mimicryModeNext := mmMode
 
     robEntryIndex := robIndex
+    storeInstruction := pipeline.service[LsuService].operationOutput(issueStage) === LsuOperationType.STORE
 
     stateNext := State.EXECUTING
     regs.shift := True

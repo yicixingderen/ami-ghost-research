@@ -130,14 +130,27 @@ class LoadManager(
       outputCache := rdbStream.payload
 
       cdbStream.valid := True
-      cdbStream.payload.realUpdate := loadStage.output(
-        pipeline.data.RD_TYPE
-      ) =/= MimicryRegisterType.MIMIC_GPR
+      cdbStream.payload.storeForwardValid := False
+      cdbStream.payload.storeForwardValue := 0
+      val mimicry = pipeline.service[MimicryService]
+      val realUpdate = Bool()
+      realUpdate :=
+        (!storedMessage.mimicryMode && !mimicry.isGhost(loadStage)) || mimicry.isPersistent(loadStage)
+      when(storedMessage.mimicryMode && mimicry.isGhost(loadStage) && !realUpdate) {
+        cdbStream.payload.storeForwardValid := True
+        cdbStream.payload.storeForwardValue := loadStage.output(pipeline.data.RD_DATA)
+      }
+      when(!realUpdate && loadStage.output(pipeline.data.RD_TYPE) === RegisterType.GPR) {
+        rdbStream.payload.registerMap.element(
+          pipeline.data.RD_TYPE.asInstanceOf[PipelineData[Data]]
+        ) := MimicryRegisterType.MIMIC_GPR
+      }
+      cdbStream.payload.realUpdate := realUpdate
       cdbStream.payload.activatingTaken := False
       cdbStream.payload.writeValue := loadStage.output(pipeline.data.RD_DATA)
       cdbStream.payload.robIndex := storedMessage.robIndex
 
-      when(loadStage.output(pipeline.data.RD_TYPE) === MimicryRegisterType.MIMIC_GPR) {
+      when(!realUpdate) {
         cdbStream.payload.writeValue := wawBuffer
         cdbStream.payload.realUpdate := wawBufferValid
       }

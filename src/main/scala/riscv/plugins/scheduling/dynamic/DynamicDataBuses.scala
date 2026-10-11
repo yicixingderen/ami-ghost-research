@@ -11,6 +11,8 @@ case class CdbMessage(metaRegisters: DynBundle[PipelineData[Data]], robIndexBits
 
   val robIndex: UInt = UInt(robIndexBits)
   val writeValue: UInt = UInt(config.xlen bits)
+  val storeForwardValid: Bool = Bool()
+  val storeForwardValue: UInt = UInt(config.xlen bits)
 
   // TODO: move these to metadata (or remove)
   val realUpdate: Bool = Bool()
@@ -26,6 +28,7 @@ case class RdbMessage(retirementRegisters: DynBundle[PipelineData[Data]], robInd
     implicit config: Config
 ) extends Bundle {
   val robIndex = UInt(robIndexBits)
+  val mimicryMode = Bool()
   val wawBuffer = Flow(
     UInt(config.xlen bits)
   ) // TODO: could be transported in RD_DATA to save space
