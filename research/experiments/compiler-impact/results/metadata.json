@@ -1,0 +1,53 @@
+{
+  "ami_commit": "9681e2892609079792f6ec554eb50c735538523c",
+  "proteus_core": "riscv.CoreExtMem",
+  "evaluation_commit": "e0478ef7e280fe63f8f6932a3fd5d94ef1730ba3",
+  "evaluation_patch_sha256": "9555a68f122d879068e7d055dca57ca9c14fd70fa13795a7066a60a29c552638",
+  "secret_patch_sha256": "8e2e2f6db4489613510acf5878bcd6f2aeb1a533e6a5835ef5253a9fb9ac0d9d",
+  "sim_sha256": "f8ffa6322043d77bdfc08208d97c3e5d9e5e4ffea31c270a88725902ab6fa881",
+  "compiler_commits": {
+    "original": "383a9a6c18e5869698e2be5eca1dfc57fd04c05a",
+    "ghost-fixed": "f160e224b5f040b340b3ae0693b41dacc0458ef0"
+  },
+  "compiler_binaries": {
+    "original": {
+      "clang": "99bbb8cda077aea373f2f334fe512523b956791c90576fda9aa948886666c4ed",
+      "opt": "4150430c6aab8f441dc1be84ce6e4eb6ddc1d1bc2d8725adb126313d0b450acb",
+      "llc": "36a93d0e8a0485f890a68b6b4ebf4498c521c0607b5a8da99563b253261af275"
+    },
+    "ghost-fixed": {
+      "clang": "6d467cae991a28e77027c95dcc2c245ef6d6c4e9265cb96aff0c7815434c55fe",
+      "opt": "4150430c6aab8f441dc1be84ce6e4eb6ddc1d1bc2d8725adb126313d0b450acb",
+      "llc": "46da246e994dd508df2e9d113c4d98b32f7f347d064d2ce8fcc3fe79dcda1a4c"
+    }
+  },
+  "gcc": "riscv32-unknown-elf-gcc () 12.2.0",
+  "python": "3.12.3",
+  "vcdvcd": "2.6.0",
+  "groups": [
+    "baseline",
+    "sese_ir",
+    "triangle_ir",
+    "molnar",
+    "ami_pcfl",
+    "ami_sese",
+    "ami_triangle",
+    "manual_molnar",
+    "manual_ami"
+  ],
+  "benchmarks": [
+    "triangle",
+    "ifthenloop",
+    "modexp2",
+    "mulmod16",
+    "keypad",
+    "bsl",
+    "fork"
+  ],
+  "ir_passes": {
+    "baseline": null,
+    "reducible": "function(fix-irreducible,loop-simplify)",
+    "triangle": "function(fix-irreducible,loop-simplify,structurizecfg)",
+    "sese": "function(fix-irreducible,loop-simplify,structurizecfg,branch-enhance)"
+  }
+}

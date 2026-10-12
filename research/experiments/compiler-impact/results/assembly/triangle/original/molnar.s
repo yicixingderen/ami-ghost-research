@@ -1,0 +1,34 @@
+	.text
+	.attribute	4, 16
+	.attribute	5, "rv32i2p0_m2p0"
+	.file	"triangle.c"
+	.globl	triangle                        # -- Begin function triangle
+	.p2align	2
+	.type	triangle,@function
+triangle:                               # @triangle
+# %bb.0:
+	lui	a2, %hi(cfl_taken)
+	lw	a3, %lo(cfl_taken)(a2)
+	#APP
+	mark	1
+	#NO_APP
+	li	a4, 7
+	slt	a0, a0, a1
+	xori	a0, a0, 1
+	neg	a0, a0
+	and	a0, a0, a3
+	li	a1, 3
+	not	a5, a0
+	and	a0, a0, a1
+	and	a4, a5, a4
+	or	a0, a0, a4
+	#APP
+	mark	2
+	#NO_APP
+	sw	a3, %lo(cfl_taken)(a2)
+	ret
+.Lfunc_end0:
+	.size	triangle, .Lfunc_end0-triangle
+                                        # -- End function
+	.ident	"clang version 16.0.5 (https://github.com/Danacus/llvm-project-ami-cfl.git 383a9a6c18e5869698e2be5eca1dfc57fd04c05a)"
+	.section	".note.GNU-stack","",@progbits
