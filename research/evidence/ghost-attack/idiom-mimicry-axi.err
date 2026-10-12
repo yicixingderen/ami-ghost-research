@@ -1,0 +1,45 @@
+REQ cycle=6 addr=0x0 id=0 write=0
+RESP n=1 data=0x597 id=0
+REQ cycle=7 addr=0x4 id=0 write=0
+RESP n=2 data=0x3058593 id=0
+REQ cycle=8 addr=0x8 id=0 write=0
+RESP n=3 data=0x900513 id=0
+REQ cycle=9 addr=0xc id=0 write=0
+RESP n=4 data=0x400693 id=0
+REQ cycle=10 addr=0x10 id=0 write=0
+RESP n=5 data=0x200713 id=0
+REQ cycle=11 addr=0x14 id=0 write=0
+RESP n=6 data=0xd74661 id=0
+REQ cycle=12 addr=0x18 id=0 write=0
+RESP n=7 data=0x5a500 id=0
+REQ cycle=13 addr=0x1c id=0 write=0
+RESP n=8 data=0xa5a023 id=0
+REQ cycle=14 addr=0x20 id=0 write=0
+RESP n=9 data=0x100002b7 id=0
+REQ cycle=15 addr=0x24 id=0 write=0
+RESP n=10 data=0x400313 id=0
+REQ cycle=16 addr=0x30 id=8 write=0
+RESP n=11 data=0x1 id=8
+REQ cycle=17 addr=0x28 id=0 write=0
+RESP n=12 data=0x628023 id=0
+REQ cycle=18 addr=0x2c id=0 write=0
+RESP n=13 data=0x6f id=0
+REQ cycle=19 addr=0x30 id=0 write=0
+RESP n=14 data=0x1 id=0
+REQ cycle=20 addr=0x30 id=3 write=1
+WRITE data=0x1 strb=0xf
+REQ cycle=15 addr=0x34 id=0 write=0
+RESP n=15 data=0xcafebabe id=0
+REQ cycle=22 addr=0x38 id=0 write=0
+RESP n=16 data=0xcafebabe id=0
+REQ cycle=23 addr=0x3c id=0 write=0
+RESP n=17 data=0xcafebabe id=0
+REQ cycle=24 addr=0x40 id=0 write=0
+RESP n=18 data=0xcafebabe id=0
+REQ cycle=25 addr=0x44 id=0 write=0
+RESP n=19 data=0xcafebabe id=0
+REQ cycle=26 addr=0x48 id=0 write=0
+RESP n=20 data=0xcafebabe id=0
+REQ cycle=27 addr=0x4c id=0 write=0
+RESP n=21 data=0xcafebabe id=0
+REQ cycle=28 addr=0x50 id=0 write=0

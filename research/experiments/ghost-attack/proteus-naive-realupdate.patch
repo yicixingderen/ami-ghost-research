@@ -1,0 +1,11 @@
+--- a/src/main/scala/riscv/plugins/scheduling/dynamic/ReservationStation.scala
++++ b/src/main/scala/riscv/plugins/scheduling/dynamic/ReservationStation.scala
+@@ -254,7 +254,7 @@
+       pipeline.serviceOption[MimicryService].foreach { mimicry =>
+         {
+           realUpdate :=
+-            !(meta.mimicryMode ^ mimicry.isGhost(exeStage)) | mimicry.isPersistent(exeStage)
++            !meta.mimicryMode | mimicry.isPersistent(exeStage)
+ 
+           when(!realUpdate) {
+             cdbStream.payload.writeValue := meta.wawBuffer

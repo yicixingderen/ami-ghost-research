@@ -1,0 +1,271 @@
+diff --git a/.gitignore b/.gitignore
+index 2133e8d..f8be557 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -10,3 +10,4 @@ __pycache__/
+ report.csv
+ results.tex
+ results.html
++compiler-groups/
+diff --git a/Makefile b/Makefile
+index c6800fd..ae29abc 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,11 @@
+-PYTHON = python3
++PYTHON ?= $(if $(wildcard $(abspath $(dir $(lastword $(MAKEFILE_LIST))))/../.venv/bin/python),$(abspath $(dir $(lastword $(MAKEFILE_LIST))))/../.venv/bin/python,python3)
+ 
+ all: report.csv
+ 
++.PHONY: compiler-groups
++compiler-groups:
++	$(PYTHON) run-toolchain-groups.py $(ARGS)
++
+ report.csv:
+ 	$(PYTHON) run-benchmarks.py
+ 
+diff --git a/Makefile.include b/Makefile.include
+index 79df2fa..fc4de4e 100644
+--- a/Makefile.include
++++ b/Makefile.include
+@@ -1,12 +1,12 @@
+ TESTS_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ BASE_DIR = $(abspath $(TESTS_DIR)/..)
+-SIM_DIR = $(BASE_DIR)/proteus/sim
++SIM_DIR = $(BASE_DIR)/sim
+ SIM_EXE = $(SIM_DIR)/build/sim
+ CORE ?= riscv.CoreExtMem
+ BUILD_CORE ?= 1
+ USECLANG ?= 1
+ 
+-PYTHON = python3
++PYTHON ?= $(if $(wildcard $(BASE_DIR)/.venv/bin/python),$(BASE_DIR)/.venv/bin/python,python3)
+ EVALUATE = $(PYTHON) $(TESTS_DIR)evaluate.py
+ 
+ OPTLEVEL ?= 3
+@@ -15,7 +15,10 @@ COMMONCFLAGS += -I$(TESTS_DIR)
+ COMMONCFLAGS += -nostdlib
+ COMMONCFLAGS += -O$(OPTLEVEL)
+ 
+-TOOLCHAIN_DIR = $(BASE_DIR)/toolchain/install/bin
++# Use the separately installed LLVM AMi-CFL fork by default. Override this
++# variable on the make command line to compare against the original LLVM 15
++# toolchain, e.g. TOOLCHAIN_DIR=$(BASE_DIR)/toolchain/install/bin.
++TOOLCHAIN_DIR ?= $(BASE_DIR)/../ami-llvm-project-ghost-research/install/bin
+ CLANG = $(TOOLCHAIN_DIR)/clang
+ OBJDUMP = $(TOOLCHAIN_DIR)/llvm-objdump
+ 
+@@ -24,8 +27,20 @@ CLANGFLAGS += $(COMMONCFLAGS)
+ CLANGFLAGS += --target=riscv32
+ CLANGFLAGS += -march=rv32im
+ 
+-RISCV_PREFIX = riscv32-unknown-elf
+-RISCV_INSTALL_DIR = /opt/riscv/bin
++# The fork keeps AMi linearization disabled unless explicitly requested. The
++# source must use clang::annotate_type("secret") for these passes to see
++# secret-dependent data; the existing /* secret */ comments are documentation.
++AMI_LINEARIZATION ?= 0
++AMI_GENERAL_LINEARIZATION ?= 0
++ifeq ($(AMI_LINEARIZATION),1)
++CLANGFLAGS += -mllvm -riscv-enable-ami-linearization=true
++ifeq ($(AMI_GENERAL_LINEARIZATION),1)
++CLANGFLAGS += -mllvm -riscv-ami-general-linearization=true
++endif
++endif
++
++RISCV_PREFIX ?= riscv32-unknown-elf
++RISCV_INSTALL_DIR ?= /opt/riscv/bin
+ OBJCOPY = $(RISCV_INSTALL_DIR)/$(RISCV_PREFIX)-objcopy
+ GCC = $(RISCV_INSTALL_DIR)/$(RISCV_PREFIX)-gcc
+ 
+diff --git a/run-benchmarks.py b/run-benchmarks.py
+index 165fb1d..44b7b33 100644
+--- a/run-benchmarks.py
++++ b/run-benchmarks.py
+@@ -17,10 +17,10 @@ class Result:
+ def load(results, folder, benchmark):
+   with open("%s/%s.results" % (folder, benchmark)) as f:
+     fread = f.read()
+-    m = re.search("size=(\d+)", fread)
++    m = re.search(r"size=(\d+)", fread)
+     assert m, benchmark
+     size = m.group(1)
+-    m = re.search("cycles=(\d+)", fread)
++    m = re.search(r"cycles=(\d+)", fread)
+     assert m, benchmark
+     cycles = m.group(1)
+     results[benchmark] = Result(benchmark, float(size), float(cycles))
+@@ -262,6 +262,7 @@ if __name__ == "__main__":
+   blacklist += ["twofish"]
+   blacklist += ["call"]
+   blacklist += ["ifcompound"]
++  blacklist += ["compiler-groups"]
+ 
+   benchmarks = [x for x in os.listdir(".") if os.path.isdir(x)]
+   benchmarks = [x for x in benchmarks if x not in blacklist]
+diff --git a/run-toolchain-groups.py b/run-toolchain-groups.py
+new file mode 100755
+index 0000000..43591e9
+--- /dev/null
++++ b/run-toolchain-groups.py
+@@ -0,0 +1,160 @@
++#!/usr/bin/env python3
++"""Run the AMi evaluation once for each named compiler toolchain."""
++
++import argparse
++import os
++from pathlib import Path
++import shutil
++import subprocess
++import sys
++
++
++def default_groups(evaluation_dir):
++    repository_dir = evaluation_dir.parent
++    return [
++        ("author", repository_dir / "toolchain/install/bin"),
++        ("ghost-fixed", repository_dir.parent /
++         "llvm-project-ami-cfl/install/bin"),
++    ]
++
++
++def parse_group(spec):
++    name, separator, directory = spec.partition("=")
++    if not separator or not name or not directory:
++        raise ValueError("expected NAME=TOOLCHAIN_DIR, got %r" % spec)
++    return name, Path(directory).expanduser().resolve()
++
++
++def parse_groups(evaluation_dir, specs):
++    if specs:
++        return [parse_group(spec) for spec in specs]
++
++    environment_specs = os.environ.get("TOOLCHAIN_GROUPS")
++    if environment_specs:
++        return [parse_group(spec) for spec in environment_specs.split(",")]
++
++    return default_groups(evaluation_dir)
++
++
++def run(command, evaluation_dir, environment):
++    print("$ %s" % " ".join(command), flush=True)
++    return subprocess.run(command, cwd=evaluation_dir,
++                          env=environment).returncode
++
++
++def copy_results(evaluation_dir, output_dir):
++    output_dir.mkdir(parents=True, exist_ok=True)
++    for report_name in ("report.csv", "results.tex", "results.html"):
++        source = evaluation_dir / report_name
++        if source.exists():
++            shutil.copy2(source, output_dir / report_name)
++
++    results_dir = output_dir / "results"
++    for benchmark_dir in sorted(evaluation_dir.iterdir()):
++        if not benchmark_dir.is_dir():
++            continue
++        result_files = sorted(benchmark_dir.glob("*.results"))
++        if not result_files:
++            continue
++        destination = results_dir / benchmark_dir.name
++        destination.mkdir(parents=True, exist_ok=True)
++        for result_file in result_files:
++            shutil.copy2(result_file, destination / result_file.name)
++
++
++def write_metadata(output_dir, name, toolchain_dir, build_core, core):
++    clang = toolchain_dir / "clang"
++    version = subprocess.run([str(clang), "--version"],
++                             check=False, capture_output=True, text=True)
++    source_dir = toolchain_dir.parent.parent
++    revision = subprocess.run(
++        ["git", "-C", str(source_dir), "rev-parse", "HEAD"],
++        check=False, capture_output=True, text=True)
++    version_lines = version.stdout.splitlines()
++    source_revision = revision.stdout.strip() or "unknown"
++    metadata = [
++        "group=%s" % name,
++        "toolchain_dir=%s" % toolchain_dir,
++        "build_core=%s" % build_core,
++        "core=%s" % core,
++        "source_git=%s" % source_revision,
++        "clang_version=%s" % (version_lines[0] if version_lines
++                               else "unknown"),
++    ]
++    (output_dir / "metadata.txt").write_text("\n".join(metadata) + "\n")
++
++
++def main():
++    evaluation_dir = Path(__file__).resolve().parent
++    parser = argparse.ArgumentParser(
++        description="Run the AMi benchmark suite for multiple compiler groups")
++    parser.add_argument(
++        "--group", action="append", metavar="NAME=TOOLCHAIN_DIR",
++        help="override the default groups; may be specified more than once")
++    parser.add_argument(
++        "--output-dir", default=str(evaluation_dir / "compiler-groups"),
++        help="directory in which per-group reports are saved")
++    parser.add_argument(
++        "--build-core", choices=("0", "1"),
++        default=os.environ.get("BUILD_CORE", "1"),
++        help="whether each benchmark may rebuild the Proteus simulator")
++    parser.add_argument(
++        "--core", default=os.environ.get("CORE", "riscv.CoreExtMem"),
++        help="Proteus core passed to the benchmark Makefiles")
++    args = parser.parse_args()
++
++    try:
++        groups = parse_groups(evaluation_dir, args.group)
++    except ValueError as error:
++        parser.error(str(error))
++
++    output_root = Path(args.output_dir).expanduser().resolve()
++    output_root.mkdir(parents=True, exist_ok=True)
++    failures = []
++    ran_groups = 0
++
++    for name, toolchain_dir in groups:
++        clang = toolchain_dir / "clang"
++        group_output = output_root / name
++        if not clang.is_file() or not os.access(clang, os.X_OK):
++            print("SKIP %s: missing executable %s" % (name, clang),
++                  file=sys.stderr)
++            continue
++
++        ran_groups += 1
++        environment = os.environ.copy()
++        environment["TOOLCHAIN_DIR"] = str(toolchain_dir)
++        environment["BUILD_CORE"] = args.build_core
++        environment["CORE"] = args.core
++        environment.setdefault("MPLBACKEND", "Agg")
++
++        print("\n=== compiler group: %s ===" % name, flush=True)
++        clean_status = run(["make", "realclean"], evaluation_dir, environment)
++        if clean_status != 0:
++            failures.append((name, "realclean", clean_status))
++            continue
++
++        try:
++            status = run(["make"], evaluation_dir, environment)
++            if status != 0:
++                failures.append((name, "evaluation", status))
++                continue
++            copy_results(evaluation_dir, group_output)
++            write_metadata(group_output, name, toolchain_dir,
++                           args.build_core, args.core)
++        finally:
++            run(["make", "realclean"], evaluation_dir, environment)
++
++    if not ran_groups:
++        print("No compiler groups were runnable", file=sys.stderr)
++        return 1
++    if failures:
++        for name, phase, status in failures:
++            print("FAILED %s (%s): exit %d" % (name, phase, status),
++                  file=sys.stderr)
++        return 1
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())

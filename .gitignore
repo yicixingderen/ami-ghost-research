@@ -13,6 +13,10 @@
 *.swp
 *.vcd
 *.mem
+!/research/evidence/ghost-attack/*.vcd
+!/research/evidence/ghost-attack/*.mem
+/research/experiments/ghost-attack/results/
+/.venv/
 .kdev4/
 *.kdev4
 .bsp

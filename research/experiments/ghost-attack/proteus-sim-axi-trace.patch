@@ -1,0 +1,58 @@
+--- a/sim/main.cpp
++++ b/sim/main.cpp
+@@ -130,8 +130,23 @@
+ 
+         if (top_.io_axi_arw_valid)
+         {
++            if (cycle < 200 || (cycle % 100000) == 0)
++            {
++                std::cerr << "REQ cycle=" << cycle
++                          << " addr=0x" << std::hex << top_.io_axi_arw_payload_addr
++                          << " id=" << std::dec << unsigned(top_.io_axi_arw_payload_id)
++                          << " write=" << unsigned(top_.io_axi_arw_payload_write)
++                          << "\n";
++            }
+             if (top_.io_axi_arw_payload_write)
+             {
++                if (cycle < 200 || (cycle % 100000) == 0)
++                {
++                    std::cerr << "WRITE data=0x" << std::hex
++                              << top_.io_axi_w_payload_data
++                              << " strb=0x" << unsigned(top_.io_axi_w_payload_strb)
++                              << "\n";
++                }
+                 write(top_.io_axi_arw_payload_addr,
+                       top_.io_axi_w_payload_strb,
+                       top_.io_axi_w_payload_data);
+@@ -213,6 +228,14 @@
+ 
+     void putOnBus(const ReadWord &rw)
+     {
++      static unsigned long long responses = 0;
++      responses++;
++      if (responses < 200 || (responses % 100000) == 0)
++      {
++        std::cerr << "RESP n=" << responses
++                  << " data=0x" << std::hex << rw.nextReadWord_
++                  << " id=" << std::dec << unsigned(rw.nextReadId_) << "\n";
++      }
+ #if 0
+       std::cout << "DATA=" << std::hex << rw.nextReadWord_ << std::endl;
+ #endif
+@@ -515,6 +538,16 @@
+                 isDone = true;
+                 result = 1;
+             }
++
++            if (cycle >= 200000)
++            {
++                std::cerr << "WATCHDOG cycle=" << cycle
++                          << " axi_valid=" << unsigned(top->io_axi_arw_valid)
++                          << " r_ready=" << unsigned(top->io_axi_r_ready)
++                          << "\n";
++                isDone = true;
++                result = 2;
++            }
+         }
+ 
+         tracer->dump(mainTime);
