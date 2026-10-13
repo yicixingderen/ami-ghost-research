@@ -135,7 +135,9 @@ class LoadManager(
       val mimicry = pipeline.service[MimicryService]
       val realUpdate = Bool()
       realUpdate :=
-        (!storedMessage.mimicryMode && !mimicry.isGhost(loadStage)) || mimicry.isPersistent(loadStage)
+        (!storedMessage.mimicryMode && !mimicry.isGhost(loadStage)) || mimicry.isPersistent(
+          loadStage
+        )
       when(storedMessage.mimicryMode && mimicry.isGhost(loadStage) && !realUpdate) {
         cdbStream.payload.storeForwardValid := True
         cdbStream.payload.storeForwardValue := loadStage.output(pipeline.data.RD_DATA)

@@ -4,6 +4,7 @@
 /*.bin
 /project/*
 !/project/plugins.sbt
+!/project/build.properties
 /simWorkspace/
 /target/
 /tmp/

@@ -383,7 +383,9 @@ class ReservationStation(
     meta.mimicryModeNext := mmMode
 
     robEntryIndex := robIndex
-    storeInstruction := pipeline.service[LsuService].operationOutput(issueStage) === LsuOperationType.STORE
+    storeInstruction := pipeline
+      .service[LsuService]
+      .operationOutput(issueStage) === LsuOperationType.STORE
 
     stateNext := State.EXECUTING
     regs.shift := True
