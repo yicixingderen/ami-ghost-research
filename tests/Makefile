@@ -12,21 +12,13 @@ BUILD_CORE ?= 1
 
 PYTHON = python3
 RISCV_PREFIX ?= riscv32-unknown-elf
-RISCV_INSTALL_DIR = /opt/riscv/bin
+RISCV_INSTALL_DIR ?= /opt/riscv/bin
 CC = $(RISCV_INSTALL_DIR)/$(RISCV_PREFIX)-gcc
 LD = $(RISCV_INSTALL_DIR)/$(RISCV_PREFIX)-gcc
 OBJDUMP = $(RISCV_INSTALL_DIR)/$(RISCV_PREFIX)-objdump
 OBJCOPY = $(RISCV_INSTALL_DIR)/$(RISCV_PREFIX)-objcopy
 ARCHFLAGS ?= -march=rv32imzicsr -mabi=ilp32
 CFLAGS = $(ARCHFLAGS)
-
-TOOLCHAIN_DIR = $(TOP_DIR)/toolchain/install
-OBJDUMP = $(TOOLCHAIN_DIR)/bin/llvm-objdump
-CC = $(TOOLCHAIN_DIR)/bin/clang
-CFLAGS =
-CFLAGS += --target=riscv32
-CFLAGS += -march=rv32im
-CFLAGS += -nostdlib
 
 ifeq ($(BUILD_CORE),1)
 FORCE = FORCE
