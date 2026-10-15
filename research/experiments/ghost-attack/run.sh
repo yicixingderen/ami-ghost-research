@@ -77,6 +77,10 @@ build_sim() { # build_sim <label> <scratch> <baseline|fixed>
         else
             cp -a "$PROTEUS_SRC"/. "$scratch/proteus"
         fi
+        # The historical baseline predates project/build.properties. Pin the
+        # launcher for both scratch trees so a current SBT package does not
+        # select SBT 2.x and fail to resolve the SBT 1.x scalafmt plugin.
+        printf 'sbt.version=1.11.7\n' > "$scratch/proteus/project/build.properties"
         ( cd "$scratch/proteus" && patch -p1 < "$EXP_DIR/proteus-sim-axi-trace.patch" )
         ( cd "$scratch/proteus" && sbt "runMain $CORE" )
         ( cd "$scratch/proteus/sim" && make "CORE=$CORE" build/sim )

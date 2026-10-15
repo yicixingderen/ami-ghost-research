@@ -20,12 +20,10 @@ The commands below are the supported path on a fresh 64-bit Ubuntu 22.04 or late
 sudo apt-get update
 sudo apt-get install -y \
   git make g++ cmake ninja-build patch python3 coreutils \
-  openjdk-17-jdk sbt verilator curl ca-certificates gnupg
+  openjdk-17-jdk verilator curl ca-certificates gnupg
 ```
 
-The project pins the SBT version in `project/build.properties` (`1.11.7`). Verify that the project launcher is available with `java -version` and `sbt --version` before starting the build. The first SBT/Verilator build downloads Scala/SpinalHDL dependencies and can take 10--30 minutes.
-
-If the Ubuntu image does not provide `sbt`, add the official SBT repository and install it before continuing:
+Ubuntu 22.04 does not provide SBT in its default archive. Add the official SBT repository and install it before continuing:
 
 ```sh
 echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
@@ -34,6 +32,8 @@ curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A
 sudo apt-get update
 sudo apt-get install -y sbt
 ```
+
+The project pins the SBT version in `project/build.properties` (`1.11.7`). Verify that the project launcher is available with `java -version` and `sbt --version` before starting the build. The first SBT/Verilator build downloads Scala/SpinalHDL dependencies and can take 10--30 minutes.
 
 #### 2. Clone the two repositories
 
@@ -117,12 +117,10 @@ The original AMi Vivado workflow remains available in the [original AMi README](
 sudo apt-get update
 sudo apt-get install -y \
   git make g++ cmake ninja-build patch python3 coreutils \
-  openjdk-17-jdk sbt verilator curl ca-certificates gnupg
+  openjdk-17-jdk verilator curl ca-certificates gnupg
 ```
 
-项目在 `project/build.properties` 中固定了 SBT 版本（`1.11.7`）。开始构建前请确认 `java -version` 和 `sbt --version` 可用。首次 SBT/Verilator 构建需要下载 Scala/SpinalHDL 依赖，通常需要 10--30 分钟。
-
-如果 Ubuntu 镜像没有提供 `sbt`，请先添加官方 SBT 软件源：
+Ubuntu 22.04 的默认软件源不提供 SBT，请先添加官方 SBT 软件源：
 
 ```sh
 echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
@@ -131,6 +129,8 @@ curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A
 sudo apt-get update
 sudo apt-get install -y sbt
 ```
+
+项目在 `project/build.properties` 中固定了 SBT 版本（`1.11.7`）。开始构建前请确认 `java -version` 和 `sbt --version` 可用。首次 SBT/Verilator 构建需要下载 Scala/SpinalHDL 依赖，通常需要 10--30 分钟。
 
 #### 2. 获取两个仓库
 

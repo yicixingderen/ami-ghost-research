@@ -100,12 +100,12 @@ pollution itself is already exploitable.
 
 ## Addendum (2026-10-11, project handover)
 
-The `/tmp` evidence files were archived to `../evidence/ghost-attack/`
-(substituting the `mimic` suffix for the older `-run` naming), the workloads
-and the AXI-trace instrumentation now live in
-`../experiments/ghost-attack/`, and `../experiments/ghost-attack/run.sh`
-reproduces both experiments end-to-end with automatic verdicts (validated
-2026-10-11 against a rebuilt scratch).
+The historical VCD evidence was intentionally removed from the repository
+because it is experiment output, not an input to the build or runtime. The
+workloads and AXI-trace instrumentation live in `../experiments/ghost-attack/`;
+`../experiments/ghost-attack/run.sh` regenerates the VCD files in its temporary
+`results/<timestamp>/` directory and reproduces both experiments end-to-end
+with automatic verdicts.
 
 Two clarifications confirmed at the source level
 (see `../CONCEPTS.md` for details):

@@ -68,8 +68,8 @@ sw    a0,...          # store 不可被 mimic，两种模式都真实提交 → 
   数据段紧随代码段；`boot.S`/`link.ld` 是带启动代码的变体，本实验未用）
 - `proteus-sim-axi-trace.patch`：模拟器 AXI 观测 + watchdog 插桩
 - `run.sh`：一键复现
-- `results/<时间戳>/`：每次运行的 bin/err/mem/vcd（不入库可删）
-- `../../evidence/ghost-attack/`：2026-10-11 归档的关键证据
+- `results/<时间戳>/`：每次运行的 bin/err/mem/vcd；这些临时结果不入库，运行后可删除
+- 历史 VCD 波形不随仓库保存；需要证据时直接运行 `./run.sh`，再查看对应结果目录
 
 ## 惯用法正确性验证（防御设计的前提，2026-10-11 实测）
 
