@@ -44,7 +44,7 @@ git clone --recurse-submodules https://github.com/yicixingderen/ami-ghost-resear
 git clone https://github.com/yicixingderen/ami-llvm-project-ghost-research.git
 
 cd ami-ghost-research
-git checkout 51717288c15ad8a4137632d3e51594d8c1e5101e
+git checkout 2e07ccafccdbd513db3f1f6342582cc0650fdcec
 git submodule update --init --recursive
 ```
 
@@ -141,7 +141,7 @@ git clone --recurse-submodules https://github.com/yicixingderen/ami-ghost-resear
 git clone https://github.com/yicixingderen/ami-llvm-project-ghost-research.git
 
 cd ami-ghost-research
-git checkout 51717288c15ad8a4137632d3e51594d8c1e5101e
+git checkout 2e07ccafccdbd513db3f1f6342582cc0650fdcec
 git submodule update --init --recursive
 ```
 
